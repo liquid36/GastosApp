@@ -21,9 +21,13 @@ function testing()
 	v.save(function(o){console.log("ID GUARDADO " + o.id);},function(transaction, error){console.log("Error: " + error.message);});
 	*/
 	
-	var all = new Viaje().all(function(res){ 
+	/*var all = new Viaje().all(function(res){ 
 		console.log(res); 
-	});
+	});*/
+	
+	var all = new Viaje().where("Origen = ''").first(function(res){ 
+		console.log(res); 
+	}, function (msg) { console.log(msg) } );
 	
 	
 	/*v = new Viaje();

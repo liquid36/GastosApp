@@ -1,5 +1,8 @@
 (function( window, undefined ){ 
-	function _eloquent() {}	
+	function _eloquent() 
+	{
+		this.statement = {};
+	}	
 	
 	/*	
 		Find function: @id: ID of de model	
@@ -100,15 +103,15 @@
 		
 		var sql = squel.select()
 					.from(tableName) 
-					.toString(); 		
-					
+					.toString(); 						
 					
 		window.db.executeSQL(sql.toString(), function(tx,result){
 			var len = result.rows.length; 
 			var res = [];
 			for (var i = 0; i < len ; i++) {
-				var obj = result.rows.item(i);
-				var temp = window.findClass(o.constructor.name); 
+				var obj = result.rows.item(i); 
+				var func = window.findClass(o.constructor.name);
+				var temp = new  func;
 				for(var a in obj) { 
 					if (a === "_table" || a ==="_timestamp") continue;
 					switch(window.typeOf(o[a])) {
@@ -119,8 +122,7 @@
 							temp[a] = obj[a]; 
 							break;
 					}		
-				}
-				
+				}				
 				res.push(temp);
 			} 
 			return success(res);
@@ -131,6 +133,107 @@
 		
 	};
 	
+	_eloquent.prototype.where = function(clause,args) {  
+		var o = this;
+		var timestamp = o['_timestamp'] ? o['_timestamp'] : false;		
+		var tableName = o['_table'] || o.constructor.name;
+		
+		
+		if (this.statement.where_clause === undefined) {
+			this.statement.where_clause = squel.select().from(tableName); 	
+		}
+		this.statement.where_clause = this.statement.where_clause.where(clause,args);
+		return this;
+	}
+	
+	_eloquent.prototype.order = function(clause,direction,args) {  
+		var o = this;
+		var timestamp = o['_timestamp'] ? o['_timestamp'] : false;		
+		var tableName = o['_table'] || o.constructor.name;
+		
+		
+		if (this.statement.where_clause === undefined) {
+			this.statement.where_clause = squel.select().from(tableName); 	
+		}
+		this.statement.where_clause = this.statement.where_clause.order(clause,direction,args);
+		return this;
+	}
+	
+	
+	_eloquent.prototype.get = function(_success,_error) { 
+		var o = this;
+		var success = _success || function () {};
+		var error   = _error || function () {};
+		if (this.statement.where_clause === undefined) {
+			error("Ningun Filtro");
+		} else {
+			var sql = this.statement.where_clause.toString();
+			window.db.executeSQL(sql.toString(), function(tx,result){
+				var len = result.rows.length; 
+				var res = [];
+				for (var i = 0; i < len ; i++) {
+					var obj = result.rows.item(i);
+					var func = window.findClass(o.constructor.name);
+					var temp = new  func;
+					for(var a in obj) { 
+						if (a === "_table" || a ==="_timestamp") continue;
+						switch(window.typeOf(o[a])) {
+							case 'boolean':
+							case 'string':
+							case 'number':
+							case 'undefined':
+								temp[a] = obj[a]; 
+								break;
+						}		
+					}
+					
+					res.push(temp);
+				} 
+				return success(res);
+				
+			} ,function (tx,err) { 
+				error(err.message);
+			});	
+		
+		}		
+	}
+	
+	_eloquent.prototype.first = function(_success,_error) { 
+		var o = this;
+		var success = _success || function () {};
+		var error   = _error || function () {};
+		if (this.statement.where_clause === undefined) {
+			error("Ningun Filtro");
+		} else {
+			var sql = this.statement.where_clause.toString();
+			window.db.executeSQL(sql.toString(), function(tx,result){
+				var len = result.rows.length; 
+				if (len > 0) {
+					var obj = result.rows.item(0);
+					var func = window.findClass(o.constructor.name);
+					var temp = new  func;
+					for(var a in obj) { 
+						if (a === "_table" || a ==="_timestamp") continue;
+						switch(window.typeOf(o[a])) {
+							case 'boolean':
+							case 'string':
+							case 'number':
+							case 'undefined':
+								temp[a] = obj[a]; 
+								break;
+						}		
+					}
+					return success(temp);		
+				} else {
+					error("Empty query");	
+				}
+			} ,function (tx,err) { 
+				error(err.message);
+			});	
+		
+		}
+		
+	}
 	
 	window.Eloquent = _eloquent;
 })( window );
